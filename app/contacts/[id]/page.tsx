@@ -4,14 +4,19 @@ import AddNoteForm from './AddNoteForm';
 import { type NextPage } from 'next';
 
 interface ContactPageProps {
-  params: Promise<{ id: string }>;  // params is now a Promise
+  params: Promise<{ id: string }>;
 }
 
 const ContactPage: NextPage<ContactPageProps> = async ({ params }) => {
-  const resolvedParams = await params;  // Resolve the Promise
+  // Resolve the params promise
+  const resolvedParams = await params;
   const { id } = resolvedParams;
 
-  const cookieStore = cookies();
+  // Await the cookies() promise to get the cookie store
+  const cookieStorePromise = cookies();
+  const cookieStore = await cookieStorePromise;
+
+  // Create Supabase client with the resolved cookie store
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -24,18 +29,21 @@ const ContactPage: NextPage<ContactPageProps> = async ({ params }) => {
     }
   );
 
+  // Fetch contact data
   const { data: contact, error: contactError } = await supabase
     .from('contacts')
     .select('*')
     .eq('id', id)
     .single();
 
+  // Fetch notes data
   const { data: notes, error: notesError } = await supabase
     .from('notes')
     .select('*')
     .eq('contact_id', id)
     .order('created_at', { ascending: false });
 
+  // Handle contact fetch error
   if (contactError) return <div className="text-red-500">Error: {contactError.message}</div>;
 
   return (
@@ -51,7 +59,9 @@ const ContactPage: NextPage<ContactPageProps> = async ({ params }) => {
             <span>{note.note_text}</span>
             <form action={async () => {
               'use server';
-              const cookieStore = cookies();
+              // Await cookies() in the server action too
+              const cookieStorePromise = cookies();
+              const cookieStore = await cookieStorePromise;
               const supabase = createServerClient(
                 process.env.NEXT_PUBLIC_SUPABASE_URL!,
                 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

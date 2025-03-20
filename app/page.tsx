@@ -1,10 +1,8 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import Link from 'next/link';
-import LogoutButton from './components/LogoutButton';
 
-export default async function Home() {
-  const cookieStore = cookies();
+export default async function Page() {
+  const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -13,60 +11,25 @@ export default async function Home() {
         get(name: string) {
           return cookieStore.get(name)?.value;
         },
-        set() {}, // Not needed for read-only
-        remove() {}, // Not needed for read-only
+        set() {},
+        remove() {},
       },
     }
   );
 
-  const { data: { session } } = await supabase.auth.getSession();
+  // Use supabase to fetch data
+  const { data, error } = await supabase.from('your_table').select('*');
 
-  if (!session) return null;
-
-  const { data: contacts, error } = await supabase
-    .from('contacts')
-    .select('*')
-    .order('created_at', { ascending: false });
+  if (error) {
+    console.error('Error fetching data:', error);
+    return <div>Error loading data</div>;
+  }
 
   return (
-    <div className="max-w-4xl mx-auto mt-10 p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Your Contacts</h1>
-        <LogoutButton />
-      </div>
-      {error && <p className="text-red-500">{error.message}</p>}
-      <ul className="space-y-4">
-        {contacts?.map((contact) => (
-          <li key={contact.id} className="p-4 bg-gray-100 rounded flex justify-between items-center">
-            <Link href={`/contacts/${contact.id}`} className="text-blue-500 hover:underline">
-              {contact.name}
-            </Link>
-            <form action={async () => {
-              'use server';
-              const cookieStore = cookies();
-              const supabase = createServerClient(
-                process.env.NEXT_PUBLIC_SUPABASE_URL!,
-                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-                {
-                  cookies: {
-                    get(name: string) {
-                      return cookieStore.get(name)?.value;
-                    },
-                    set() {},
-                    remove() {},
-                  },
-                }
-              );
-              await supabase.from('contacts').delete().eq('id', contact.id);
-            }}>
-              <button type="submit" className="text-red-500 hover:text-red-700">Delete</button>
-            </form>
-          </li>
-        ))}
-      </ul>
-      <Link href="/new-contact" className="mt-6 inline-block bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
-        Add New Contact
-      </Link>
+    <div>
+      {data.map((item) => (
+        <div key={item.id}>{item.name}</div>
+      ))}
     </div>
   );
 }
