@@ -1,8 +1,14 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import AddNoteForm from './AddNoteForm';
+import { type NextPage } from 'next';
 
-export default async function ContactPage({ params }: { params: { id: string } }) {
+// Define the props type explicitly for Next.js 15
+interface ContactPageProps {
+  params: { id: string };
+}
+
+const ContactPage: NextPage<ContactPageProps> = async ({ params }) => {
   const supabase = createServerComponentClient({ cookies });
   const { id } = params;
 
@@ -44,4 +50,6 @@ export default async function ContactPage({ params }: { params: { id: string } }
       <AddNoteForm contactId={id} />
     </div>
   );
-}
+};
+
+export default ContactPage;

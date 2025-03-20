@@ -1,10 +1,24 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import Link from 'next/link';
 import LogoutButton from './components/LogoutButton';
 
 export default async function Home() {
-  const supabase = createServerComponentClient({ cookies });
+  const cookieStore = cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        set() {}, // Not needed for read-only
+        remove() {}, // Not needed for read-only
+      },
+    }
+  );
+
   const { data: { session } } = await supabase.auth.getSession();
 
   if (!session) return null;
@@ -29,7 +43,20 @@ export default async function Home() {
             </Link>
             <form action={async () => {
               'use server';
-              const supabase = createServerComponentClient({ cookies });
+              const cookieStore = cookies();
+              const supabase = createServerClient(
+                process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+                {
+                  cookies: {
+                    get(name: string) {
+                      return cookieStore.get(name)?.value;
+                    },
+                    set() {},
+                    remove() {},
+                  },
+                }
+              );
               await supabase.from('contacts').delete().eq('id', contact.id);
             }}>
               <button type="submit" className="text-red-500 hover:text-red-700">Delete</button>
