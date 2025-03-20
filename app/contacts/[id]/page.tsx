@@ -4,10 +4,13 @@ import AddNoteForm from './AddNoteForm';
 import { type NextPage } from 'next';
 
 interface ContactPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;  // params is now a Promise
 }
 
 const ContactPage: NextPage<ContactPageProps> = async ({ params }) => {
+  const resolvedParams = await params;  // Resolve the Promise
+  const { id } = resolvedParams;
+
   const cookieStore = cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,8 +23,6 @@ const ContactPage: NextPage<ContactPageProps> = async ({ params }) => {
       },
     }
   );
-
-  const { id } = params;
 
   const { data: contact, error: contactError } = await supabase
     .from('contacts')
