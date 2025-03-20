@@ -1,15 +1,26 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import AddNoteForm from './AddNoteForm';
 import { type NextPage } from 'next';
 
-// Define the props type explicitly for Next.js 15
 interface ContactPageProps {
   params: { id: string };
 }
 
 const ContactPage: NextPage<ContactPageProps> = async ({ params }) => {
-  const supabase = createServerComponentClient({ cookies });
+  const cookieStore = cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name) {
+          return cookieStore.get(name)?.value;
+        },
+      },
+    }
+  );
+
   const { id } = params;
 
   const { data: contact, error: contactError } = await supabase
@@ -39,7 +50,18 @@ const ContactPage: NextPage<ContactPageProps> = async ({ params }) => {
             <span>{note.note_text}</span>
             <form action={async () => {
               'use server';
-              const supabase = createServerComponentClient({ cookies });
+              const cookieStore = cookies();
+              const supabase = createServerClient(
+                process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+                {
+                  cookies: {
+                    get(name) {
+                      return cookieStore.get(name)?.value;
+                    },
+                  },
+                }
+              );
               await supabase.from('notes').delete().eq('id', note.id);
             }}>
               <button type="submit" className="text-red-500 hover:text-red-700">Delete</button>
